@@ -15,3 +15,12 @@ class Usuario(db.Model):
     # Relationships
     especialista = db.relationship('Especialista', back_populates='usuario', uselist=False)
     paciente = db.relationship('Paciente', back_populates='usuario', uselist=False)
+    administrativo = db.relationship('Administrativo', back_populates='usuario', uselist=False)
+
+    @classmethod
+    def find_by_email(cls, email):
+        return cls.query.filter_by(email=email).first()
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
