@@ -1,5 +1,4 @@
 from config.db_configs import db
-
 class BloqueDeDisponibilidad(db.Model):
     __tablename__ = 'bloque_de_disponibilidad'
 
@@ -10,7 +9,7 @@ class BloqueDeDisponibilidad(db.Model):
 
     # Restricciones
     __table_args__ = (
-        db.CheckConstraint("EXTRACT(EPOCH FROM hora_fin) - EXTRACT(EPOCH FROM hora_inicio) = 2700",
+        db.check("EXTRACT(EPOCH FROM hora_fin) - EXTRACT(EPOCH FROM hora_inicio) = 2700",
                            name="duracion_bloque"),
     )
 

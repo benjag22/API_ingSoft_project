@@ -1,17 +1,22 @@
 from config.db_configs import db
+import datetime
 
-class BloqueDeDisponibilidad(db.Model):
-    __tablename__ = 'bloque_de_disponibilidad'
+class Paciente(db.Model):
+    __tablename__ = 'paciente'
 
     id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.Date, nullable=False)
-    hora_inicio = db.Column(db.Time, nullable=False)
-    hora_fin = db.Column(db.Time, nullable=False)
-
-    __table_args__ = (
-        db.CheckConstraint("EXTRACT(EPOCH FROM hora_fin) - EXTRACT(EPOCH FROM hora_inicio) = 2700",
-                           name="duracion_bloque"),
-    )
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id', ondelete='CASCADE'), nullable=False)
+    fecha_registro = db.Column(db.Date, default=datetime)
+    rut = db.Column(db.String(11), unique=True, nullable=False)
 
     # Relationships
-    disponibilidades = db.relationship('Disponibilidad', back_populates='bloque')
+    usuario = db.relationship('Usuario', back_populates='paciente')
+    citas = db.relationship('Cita', back_populates='paciente')
+
+    @classmethod
+    def find_by_rut(cls, rut):
+        return cls.query.filter_by(rut=rut).first()
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()

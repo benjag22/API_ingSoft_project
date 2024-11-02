@@ -44,7 +44,7 @@ user_output = api.model(
 
 
 # Endpoint para registro de usuario
-@api.route('/register')
+@api.route('/registrar')
 @api.doc(
     responses={
         400: 'Bad Request',
