@@ -8,18 +8,12 @@ class Usuario(db.Model):
     primer_apellido = db.Column(db.String(50), nullable=False)
     correo = db.Column(db.String(100), unique=True, nullable=False)
     contrasenia = db.Column(db.String(100), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False,
-                     check_constraint="tipo IN ('administrativo', 'especialista', 'paciente')")
+    tipo = db.Column(db.String(20), nullable=False)
     nombre_usuario = db.Column(db.String(50), unique=True, nullable=False)
-
-    # Relationships
-    especialista = db.relationship('Especialista', back_populates='usuario', uselist=False)
-    paciente = db.relationship('Paciente', back_populates='usuario', uselist=False)
-    administrativo = db.relationship('Administrativo', back_populates='usuario', uselist=False)
 
     @classmethod
     def find_by_email(cls, email):
-        return cls.query.filter_by(email=email).first()
+        return cls.query.filter_by(correo=email).first()
 
     @classmethod
     def find_by_id(cls, _id):

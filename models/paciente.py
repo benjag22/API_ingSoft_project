@@ -6,12 +6,8 @@ class Paciente(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id', ondelete='CASCADE'), nullable=False)
-    fecha_registro = db.Column(db.Date, default=datetime)
+    fecha_registro = db.Column(db.Date, default=datetime.datetime.utcnow)
     rut = db.Column(db.String(11), unique=True, nullable=False)
-
-    # Relationships
-    usuario = db.relationship('Usuario', back_populates='paciente')
-    citas = db.relationship('Cita', back_populates='paciente')
 
     @classmethod
     def find_by_rut(cls, rut):

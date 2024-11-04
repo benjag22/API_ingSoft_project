@@ -20,7 +20,8 @@ user_input = api.model(
             required=True,
             description="Tipo de usuario: administrativo, especialista, o paciente",
             enum=['administrativo', 'especialista', 'paciente']
-        )
+        ),
+        'nombre_usuario': fields.String(required=True)
     }
 )
 paciente_input = api.model(
@@ -43,7 +44,6 @@ paciente_output = api.inherit(
 @api.route('/registrar')
 @api.doc(
     responses={
-        404: 'Paciente no encontrado',
         400: 'Bad request',
         409: 'Paciente ya registrado',
         500: 'Ha ocurrido un error mientras se crea el apciente(error de server)'
@@ -72,7 +72,8 @@ class RegisterPaciente(Resource):
                 primer_apellido=usuario_data['primer_apellido'],
                 correo=usuario_data['correo'],
                 contrasenia=pbkdf2_sha256.hash(usuario_data['contrasenia']),
-                tipo=usuario_data['tipo']
+                tipo=usuario_data['tipo'],
+                nombre_usuario = usuario_data['nombre_usuario']
             )
             try:
                 usuario.save()

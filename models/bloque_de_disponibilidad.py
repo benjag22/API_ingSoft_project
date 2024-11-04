@@ -12,6 +12,3 @@ class BloqueDeDisponibilidad(db.Model):
         db.check("EXTRACT(EPOCH FROM hora_fin) - EXTRACT(EPOCH FROM hora_inicio) = 2700",
                            name="duracion_bloque"),
     )
-
-    # Relationships
-    disponibilidades = db.relationship('Disponibilidad', back_populates='bloque')

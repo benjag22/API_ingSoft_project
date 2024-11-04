@@ -11,7 +11,3 @@ class Cita(db.Model):
                        check_constraint="estado IN ('por_confirmar', 'confirmada', 'cancelada', 'completada')")
     tipo_cita = db.Column(db.String(100))
     detalles_adicionales = db.Column(db.Text)
-
-    # Relationships
-    paciente = db.relationship('Paciente', back_populates='citas')
-    disponibilidad = db.relationship('Disponibilidad', back_populates='citas')

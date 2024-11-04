@@ -5,6 +5,3 @@ class Especialidad(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), unique=True, nullable=False)
-
-    # Relationships
-    especialistas = db.relationship('Especialista', back_populates='especialidad')
