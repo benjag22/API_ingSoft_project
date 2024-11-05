@@ -4,7 +4,6 @@ from flask import jsonify, abort
 import os
 
 def set_jwt_configs(app):
-    # Configuración de la clave secreta para JWT
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'default_secret')
     jwt = JWTManager(app)
 

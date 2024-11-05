@@ -1,11 +1,11 @@
-from flask import request, abort, jsonify
+from flask import request, abort
 from flask_restx import Namespace, Resource, fields
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import create_access_token
 from models.usuario import Usuario
 
-api = Namespace('Usuarios', description='endpoints para usuarios')
+api = Namespace('usuarios', description='endpoints para usuarios')
 
 # Modelos de entrada de datos
 user_input = api.model(
@@ -19,7 +19,8 @@ user_input = api.model(
             required=True,
             description="Tipo de usuario: administrativo, especialista, o paciente",
             enum=['administrativo', 'especialista', 'paciente']
-        )
+        ),
+        'nombre_usuario': fields.String(required=True),
     }
 )
 
@@ -68,7 +69,8 @@ class Register(Resource):
             primer_apellido=user_data['primer_apellido'],
             correo=user_data['correo'],
             contrasenia=pbkdf2_sha256.hash(user_data['contrasenia']),
-            tipo=user_data['tipo']
+            tipo=user_data['tipo'],
+            nombre_usuario=user_data['nombre_usuario']
         )
 
         # Guardar usuario en la base de datos
