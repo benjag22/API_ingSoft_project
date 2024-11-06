@@ -1,4 +1,4 @@
-from config.db_configs import db
+from src.config.db_configs import db
 
 class Especialidad(db.Model):
     __tablename__ = 'especialidad'

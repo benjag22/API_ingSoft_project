@@ -1,5 +1,5 @@
 from flask_jwt_extended import JWTManager
-from models.usuario import Usuario
+from src.models.usuario import Usuario
 from flask import jsonify, abort
 import os
 

@@ -1,4 +1,4 @@
-from config.db_configs import db
+from src.config.db_configs import db
 import datetime
 
 class Paciente(db.Model):

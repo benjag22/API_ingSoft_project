@@ -3,7 +3,7 @@ from flask_restx import Namespace, Resource, fields
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import create_access_token
-from models.usuario import Usuario
+from src.models.usuario import Usuario
 
 api = Namespace('usuarios', description='endpoints para usuarios')
 
