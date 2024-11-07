@@ -1,11 +1,10 @@
-from flask import request, abort, jsonify
+from flask import request, abort
 from flask_restx import Namespace, Resource, fields
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy.exc import SQLAlchemyError
-from flask_jwt_extended import create_access_token
-from models.usuario import Usuario
-from models.especialista import Especialista
-import datetime
+from ..models.usuario import Usuario
+from ..models.especialidad import Especialidad
+from ..models.especialista import Especialista
 
 api = Namespace('especialista', description='endpoints para especialistas')
 
@@ -27,7 +26,7 @@ user_input = api.model(
 especialista_input = api.model(
     'EspecialistaRegisterFields',
     {
-        'especialidad_id': fields.Integer(required=True),
+        'especialidad': fields.String(required=True),
         'usuario': fields.Nested(user_input, required=True)
     }
 )
@@ -53,14 +52,15 @@ class RegisterEspecialista(Resource):
     @api.expect(especialista_input, validate=True)
     @api.marshal_with(especialista_output)
     def post(self):
+
         data = request.get_json()
         usuario_data = data['usuario']
-        especialidad_id = data['especialidad_id'].strip().capitalize()
 
         # Verificar si el usuario ya existe por correo
         usuario = Usuario.find_by_email(usuario_data['correo'])
+        tipo_usuario = usuario_data['tipo']
 
-        if not usuario:
+        if not usuario and tipo_usuario == 'especialista':
             # Crear un nuevo usuario si no existe
             usuario = Usuario(
                 primer_nombre=usuario_data['primer_nombre'],
@@ -75,20 +75,29 @@ class RegisterEspecialista(Resource):
             except SQLAlchemyError as e:
                 abort(500, 'Error al guardar el usuario en la base de datos.')
 
+        especialidad_nombre = data['especialidad'].strip().lower()
+
+        especialidad = Especialidad.find_by_name(especialidad_nombre)
+        if not especialidad:
+            especialidad = Especialidad(nombre=especialidad_nombre)
+            try:
+                especialidad.save()
+            except SQLAlchemyError:
+                abort(500, 'Error al guardar la especialidad en la base de datos.')
+
         # Crear el especialista asociado
         nuevo_especialista = Especialista(
             usuario_id=usuario.id,
-            especialidad_id=especialidad_id
+            especialidad_id=especialidad.id
         )
         try:
             nuevo_especialista.save()
-        except SQLAlchemyError as e:
+        except SQLAlchemyError:
             abort(500, 'Error al guardar el especialista en la base de datos.')
 
         # Generar y retornar token de acceso
-        access_token = create_access_token(identity={'id': usuario.id, 'tipo': usuario.tipo})
-
         return {
-            'especialista': nuevo_especialista,
-            'access_token': access_token
+            'id': nuevo_especialista.id,
+            'usuario_id': nuevo_especialista.usuario_id,
+            'especialidad_id': nuevo_especialista.especialidad_id
         }, 201

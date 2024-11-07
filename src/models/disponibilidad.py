@@ -12,3 +12,7 @@ class Disponibilidad(db.Model):
     __table_args__ = (
         db.UniqueConstraint('especialista_id', 'bloque_id', name='unique_especialista_bloque'),
     )
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()

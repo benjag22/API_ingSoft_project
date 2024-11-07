@@ -12,3 +12,17 @@ class BloqueDeDisponibilidad(db.Model):
         db.check("EXTRACT(EPOCH FROM hora_fin) - EXTRACT(EPOCH FROM hora_inicio) = 2700",
                            name="duracion_bloque"),
     )
+    @classmethod
+    def find_by_data(cls, _data):
+        return cls.query.filter_by(fecha=_data['fecha'],
+            hora_inicio=_data['hora_inicio'],
+            hora_fin=_data['hora_fin']
+            ).first()
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def rollback(self):
+        db.session.rollback()
+
