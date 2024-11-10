@@ -101,3 +101,27 @@ class RegisterEspecialista(Resource):
             'usuario_id': nuevo_especialista.usuario_id,
             'especialidad_id': nuevo_especialista.especialidad_id
         }, 201
+
+    @api.route('/por_correo/<string:correo>')
+    @api.doc(
+        responses={
+            200: 'Especialista encontrado',
+            404: 'Especialista no encontrado',
+            500: 'Error en el servidor'
+        }
+    )
+    class EspecialistaPorCorreo(Resource):
+        def get(self, correo):
+            usuario_de_especialista = Usuario.find_by_email(correo)
+            if not usuario_de_especialista:
+                abort(404, "no se encontro el usuario asciado")
+
+            especialista = Especialista.find_by_usuario_id(usuario_de_especialista.id)
+            if not especialista:
+                abort(404, 'Especialista no encontrado')
+
+            return {
+                'id': especialista.id,
+                'usuario_id': especialista.usuario_id,
+                'especialidad_id': especialista.especialidad_id
+            }

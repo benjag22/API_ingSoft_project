@@ -16,3 +16,6 @@ class Disponibilidad(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+    @classmethod
+    def get_by_especialista_id(self, _especialista_id):
+        return Disponibilidad.query.filter_by(especialista_id=_especialista_id).all()

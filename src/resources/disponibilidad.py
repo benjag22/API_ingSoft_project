@@ -82,3 +82,31 @@ class CrearDisponibilidad(Resource):
             abort(500, "Error al guardar la disponibilidad en la base de datos")
 
         return disponibilidad, 201
+
+@api.route('/buscar/<int:especialista_id>')
+class BuscarDisponibilidades(Resource):
+
+    def get(self, especialista_id):
+        especialista = Especialista.find_by_id(especialista_id)
+        if not especialista:
+            abort(400, f"No se encontró un especialista con el ID {especialista_id}")
+
+        disponibilidades = Disponibilidad.get_by_especialista_id(especialista_id)
+        if not disponibilidades:
+            abort(404, 'no se encontraron disponibilidades')
+
+        result=[]
+        for disponibilidad in disponibilidades:
+            bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
+            result.append({
+                'id': disponibilidad.id,
+                'especialista_id': disponibilidad.especialista_id,
+                'fecha': bloque.fecha,
+                'hora_inicio': bloque.hora_inicio,
+                'hora_fin': bloque.hora_fin
+            })
+
+        return {'disponibilidades': result},200
+
+
+
