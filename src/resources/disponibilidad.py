@@ -12,7 +12,7 @@ api = Namespace('disponibilidad', description='endpoints para disponibilidad de 
 bloque_input = api.model(
     'BloqueDeDisponibilidad',
     {
-        'fecha': MyDateFormat(required=True, description='Fecha en formato YYYY-MM-DD'),
+        'fecha': fields.String(required=True, description='Fecha en formato YYYY-MM-DD'),
         'hora_inicio': fields.String(required=True, description="Hora de inicio en formato HH:MM"),
         'hora_fin': fields.String(required=True, description="Hora de fin en formato HH:MM")
     }
@@ -35,63 +35,71 @@ disponibilidad_output = api.model(
     }
 )
 
-@api.route('/crear')
-class CrearDisponibilidad(Resource):
-    @api.expect(disponibilidad_input, validate=True)
-    @api.marshal_with(disponibilidad_output)
+@api.route('/crear_multiples')
+class CrearMultiplesDisponibilidad(Resource):
+    @api.expect(api.model('ListaDeBloques', {
+        'bloques': fields.List(fields.Nested(disponibilidad_input), required=True)
+    }), validate=True)
+    @api.marshal_list_with(disponibilidad_output)
     def post(self):
         data = request.get_json()
+        bloques = data['bloques']
+        disponibilidades = []
 
-        especialista_id = data['especialista_id']
-        bloque_data = data['bloque']
+        for bloque in bloques:
+            especialista_id = bloque['especialista_id']
+            bloque_data = bloque['bloque']
 
-        fecha = datetime.strptime(bloque_data['fecha'], '%Y-%m-%d').date()
-        hora_inicio = datetime.strptime(bloque_data['hora_inicio'], '%H:%M').time()
-        hora_fin = datetime.strptime(bloque_data['hora_fin'], '%H:%M').time()
+            try:
+                fecha = datetime.strptime(bloque_data['fecha'], '%Y-%m-%d').date()
+                hora_inicio = datetime.strptime(bloque_data['hora_inicio'], '%H:%M').time()
+                hora_fin = datetime.strptime(bloque_data['hora_fin'], '%H:%M').time()
+            except ValueError:
+                abort(400, "Formato de fecha u hora incorrecto")
 
-        especialista = Especialista.query.get(especialista_id)
-        if not especialista:
-            abort(400, f"No se encontró un especialista con el ID {especialista_id}")
+            especialista = Especialista.query.get(especialista_id)
+            if not especialista:
+                abort(400, f"No se encontro un especialista con el ID {especialista_id}")
 
-        data=[fecha,hora_inicio,hora_fin]
-        bloque = BloqueDeDisponibilidad.find_by_data(data)
-        duracion = datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)
+            bloque_existente = BloqueDeDisponibilidad.find_by_data({
+                'fecha': fecha,
+                'hora_inicio': hora_inicio,
+                'hora_fin': hora_fin
+            })
+            if not bloque_existente:
+                bloque_existente = BloqueDeDisponibilidad(
+                    fecha=fecha,
+                    hora_inicio=hora_inicio,
+                    hora_fin=hora_fin
+                )
+                try:
+                    bloque_existente.save()
+                except SQLAlchemyError:
+                    bloque_existente.rollback()
+                    abort(500, "Error al guardar el bloque")
 
-        if not bloque and duracion == timedelta(minutes=45):
-
-            bloque = BloqueDeDisponibilidad(
-                fecha=fecha,
-                hora_inicio=hora_inicio,
-                hora_fin=hora_fin
+            disponibilidad = Disponibilidad(
+                especialista_id=especialista_id,
+                bloque_id=bloque_existente.id
             )
             try:
-                bloque.save()
+                disponibilidad.save()
+                disponibilidades.append(disponibilidad)
             except SQLAlchemyError:
-                bloque.rollback()
-                abort(500, "Error al guardar el bloque de disponibilidad en la base de datos")
+                disponibilidad.rollback()
+                abort(500, "Error al guardar la disponibilidad en la base de datos")
 
-        disponibilidad = Disponibilidad(
-            especialista_id=especialista_id,
-            bloque_id=bloque.id
-        )
+        return disponibilidades, 201
 
-        try:
-            disponibilidad.save()
-        except SQLAlchemyError:
-            disponibilidad.rollback()
-            abort(500, "Error al guardar la disponibilidad en la base de datos")
-
-        return disponibilidad, 201
-
-@api.route('/buscar/<int:especialista_id>')
+@api.route('/buscar/<int:especialistaId>')
 class BuscarDisponibilidades(Resource):
 
-    def get(self, especialista_id):
-        especialista = Especialista.find_by_id(especialista_id)
+    def get(self, especialistaId):
+        especialista = Especialista.find_by_id(especialistaId)
         if not especialista:
-            abort(400, f"No se encontró un especialista con el ID {especialista_id}")
+            abort(400, f"No se encontró un especialista con el ID {especialistaId}")
 
-        disponibilidades = Disponibilidad.get_by_especialista_id(especialista_id)
+        disponibilidades = Disponibilidad.get_by_especialista_id(especialistaId)
         if not disponibilidades:
             abort(404, 'no se encontraron disponibilidades')
 
@@ -101,9 +109,9 @@ class BuscarDisponibilidades(Resource):
             result.append({
                 'id': disponibilidad.id,
                 'especialista_id': disponibilidad.especialista_id,
-                'fecha': bloque.fecha,
-                'hora_inicio': bloque.hora_inicio,
-                'hora_fin': bloque.hora_fin
+                'fecha': bloque.fecha.strftime('%Y-%m-%d'),
+                'hora_inicio': bloque.hora_inicio.strftime('%H:%M:%S') if bloque.hora_inicio else None,
+                'hora_fin': bloque.hora_fin.strftime('%H:%M:%S') if bloque.hora_fin else None 
             })
 
         return {'disponibilidades': result},200
