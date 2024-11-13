@@ -1,3 +1,5 @@
+from importlib.resources import Resource
+from ..models.disponibilidad import Disponibilidad
 from flask_restx import Namespace, fields
 from .utils.my_date_format import MyDateFormat
 
@@ -28,3 +30,12 @@ disponibilidad_input = api.model(
         'bloque': fields.Nested(bloque_input, required=True, description="Datos del bloque de disponibilidad")
     }
 )
+'''@api.route('/agendar/{id_disponibilidad}')
+class AgendarCita(Resource):
+    def post(self, id_disponibilidad):
+        disponibilidad = Disponibilidad.get_by_id(id_disponibilidad)
+        if not disponibilidad:
+            abort(404, 'No se encontro la disponibilidad')
+        return {
+            disponibilidad:disponibilidad.
+        }'''

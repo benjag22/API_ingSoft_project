@@ -80,7 +80,6 @@ class RegisterPaciente(Resource):
             except SQLAlchemyError as e:
                 abort(500, 'Error al guardar el usuario en la base de datos.')
 
-        # Crear el paciente asociado
         nuevo_paciente = Paciente(
             usuario_id=usuario.id,
             fecha_registro=datetime.datetime.now(),
@@ -91,10 +90,33 @@ class RegisterPaciente(Resource):
         except SQLAlchemyError as e:
             abort(500, 'Error al guardar el paciente en la base de datos.')
 
-        # Generar y retornar token de acceso
         access_token = create_access_token(identity={'id': usuario.id, 'tipo': usuario.tipo})
 
         return {
             'paciente': nuevo_paciente,
             'access_token': access_token
         }, 201
+
+    @api.route('/por_correo/<string:correo>')
+    @api.doc(
+        responses={
+            200: 'Paciente encontrado',
+            404: 'Paciente no encontrado',
+            500: 'Error en el servidor'
+        }
+    )
+    class PacientePorCorreo(Resource):
+        def get(self, correo):
+            usuario_de_paciente = Usuario.find_by_email(correo)
+            if not usuario_de_paciente:
+                abort(404, "no se encontro el usuario asciado")
+
+            paciente = Paciente.find_by_usuario_id(usuario_de_paciente.id)
+            if not paciente:
+                abort(404, 'Pacieente no encontrado')
+
+            return {
+                'id': paciente.id,
+                'usuario_id': paciente.usuario_id,
+                'especialidad_id': paciente.especialidad_id
+            }

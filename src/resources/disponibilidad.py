@@ -1,11 +1,12 @@
 from flask import request, abort
 from flask_restx import Namespace, Resource, fields
 from sqlalchemy.exc import SQLAlchemyError
-from ..models.bloque_de_disponibilidad import BloqueDeDisponibilidad
 from ..models.disponibilidad import Disponibilidad
 from ..models.especialista import Especialista
-from .utils.my_date_format import MyDateFormat
-from datetime import datetime, timedelta
+from ..models.especialidad import Especialidad
+from ..models.bloque_de_disponibilidad import BloqueDeDisponibilidad
+from ..models.usuario import Usuario
+from datetime import datetime
 
 api = Namespace('disponibilidad', description='endpoints para disponibilidad de especialistas')
 
@@ -99,7 +100,7 @@ class BuscarDisponibilidades(Resource):
         if not especialista:
             abort(400, f"No se encontró un especialista con el ID {especialistaId}")
 
-        disponibilidades = Disponibilidad.get_by_especialista_id(especialistaId)
+        disponibilidades = Disponibilidad.get_all_by_especialista_id(especialistaId)
         if not disponibilidades:
             abort(404, 'no se encontraron disponibilidades')
 
@@ -116,5 +117,41 @@ class BuscarDisponibilidades(Resource):
 
         return {'disponibilidades': result},200
 
+disponibilidad_output_for_pacient= api.model('Disponibilidad para pacientes',
+    {
+        'especialidad': fields.String(required=True, description="especialidad"),
+        'nombre_especialista': fields.String(required=True, description="nombre del especialista"),
+        'apellido_especialista': fields.String(required=True, description="apellido del especialista"),
+        'fecha': fields.String(required=True, description='Fecha en formato YYYY-MM-DD'),
+        'hora_inicio': fields.String(required=True, description="Hora de inicio en formato HH:MM"),
+        'hora_fin': fields.String(required=True, description="Hora de fin en formato HH:MM")
+        }
+)
+disponibilidades_output_for_pacient= api.model('Disponibilidades para pacientes',
+                                               {'disponibilidades':[disponibilidad_output_for_pacient]})
+@api.route('/obtener-disponibilidades')
+class ObtenerDisponibilidad(Resource):
+    def get(self):
+        disponibilidades = Disponibilidad.get_all()
+        if not disponibilidades:
+            abort(404, "no se encontraron disponibiladades")
 
+        result=[]
+        for disponibilidad in disponibilidades:
+            if not disponibilidad.ocupada:
+                especialista = Especialista.find_by_id(disponibilidad.especialista_id)
+                especialista_info = Usuario.find_by_id(especialista.usuario_id)
+                especialidad = Especialidad.find_by_id(especialista.especialidad_id)
+                bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
+                result.append({
+                    'especialidad': especialidad.nombre,
+                    'nombre_especialista': especialista_info.primer_nombre,
+                    'apellido_especialista': especialista_info.primer_apellido,
+                    'correo':especialista_info.correo,
+                    'fecha': bloque.fecha.strftime('%Y-%m-%d'),
+                    'hora_inicio': bloque.hora_inicio.strftime('%H:%M:%S') if bloque.hora_inicio else None,
+                    'hora_fin': bloque.hora_fin.strftime('%H:%M:%S') if bloque.hora_fin else None
+                })
+
+        return result,200
 
