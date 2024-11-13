@@ -118,5 +118,4 @@ class RegisterPaciente(Resource):
             return {
                 'id': paciente.id,
                 'usuario_id': paciente.usuario_id,
-                'especialidad_id': paciente.especialidad_id
             }

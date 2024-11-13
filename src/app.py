@@ -9,6 +9,7 @@ from src.resources.paciente import api as paciente_namespace
 from src.resources.especialista import api as especialista_namespace
 from src.resources.especialidad import api as especialidad_namespace
 from src.resources.disponibilidad import api as disponibilidad_namespace
+from src.resources.cita import api as cita_namespace
 # Inicializar la API
 app = Flask(__name__)
 CORS(app)
@@ -16,7 +17,6 @@ CORS(app)
 api = Api(app, version='1.0', title='API', description='API para proyecto')
 set_jwt_configs(app)
 
-# Configurar la base de datos
 set_db_configs(app)
 create_tables(app)
 
@@ -26,6 +26,7 @@ api.add_namespace(paciente_namespace)
 api.add_namespace(especialista_namespace)
 api.add_namespace(especialidad_namespace)
 api.add_namespace(disponibilidad_namespace)
+api.add_namespace(cita_namespace)
 
 
 if __name__ == '__main__':

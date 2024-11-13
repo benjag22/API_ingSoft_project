@@ -119,6 +119,7 @@ class BuscarDisponibilidades(Resource):
 
 disponibilidad_output_for_pacient= api.model('Disponibilidad para pacientes',
     {
+        'especialidad_id': fields.Integer(requierd_key=True, description ="id de la especialidad"),
         'especialidad': fields.String(required=True, description="especialidad"),
         'nombre_especialista': fields.String(required=True, description="nombre del especialista"),
         'apellido_especialista': fields.String(required=True, description="apellido del especialista"),
@@ -144,6 +145,8 @@ class ObtenerDisponibilidad(Resource):
                 especialidad = Especialidad.find_by_id(especialista.especialidad_id)
                 bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
                 result.append({
+                    'disponibilidad_id': disponibilidad.id,
+                    'especialidad_id': especialidad.id,
                     'especialidad': especialidad.nombre,
                     'nombre_especialista': especialista_info.primer_nombre,
                     'apellido_especialista': especialista_info.primer_apellido,
