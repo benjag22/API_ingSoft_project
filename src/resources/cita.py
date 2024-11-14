@@ -79,3 +79,26 @@ class AgendarCita(Resource):
             }, 201
         except Exception as e:
             abort(500, f"Error al agendar la cita: {str(e)}")
+
+@api.route('/delete/<int:cita_id>')
+class DeleteCita(Resource):
+    def delete(self,cita_id):
+        cita=Cita.find_by_id(cita_id)
+
+        if not cita:
+            abort(404, f'No existe la cita {cita_id}')
+        if cita.estado!="por_confirmar":
+            abort(400, 'No se puede eliminar una cita que no est en "por confirmar"')
+
+        try:
+            disponibilidad=Disponibilidad.find_by_id(cita.disponibilidad_id)
+
+            if disponibilidad:
+                disponibilidad.ocupada=False
+                disponibilidad.save()
+
+            cita.delete()
+            return '',204
+
+        except Exception as e:
+            abort(500, f"Error al eliminar la cita: {str(e)}")
