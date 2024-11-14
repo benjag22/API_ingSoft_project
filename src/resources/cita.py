@@ -82,8 +82,10 @@ class AgendarCita(Resource):
 
 @api.route('/delete/<int:cita_id>')
 class DeleteCita(Resource):
-    def delete(self,cita_id):
-        cita=Cita.find_by_id(cita_id)
+    def delete(self):
+        data = request.get_json()
+        cita_id = int(data['cita_id'])
+        cita = Cita.find_by_id(cita_id)
 
         if not cita:
             abort(404, f'No existe la cita {cita_id}')
