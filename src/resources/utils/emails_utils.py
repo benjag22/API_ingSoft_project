@@ -4,6 +4,7 @@ from flask import url_for
 from itsdangerous import URLSafeTimedSerializer
 
 def send_email_confirmation(email, nombrepaciente, cita_id):
+
     # Crea el token único de confirmación
     serializer = URLSafeTimedSerializer('your_secret_key')
     token = serializer.dumps(cita_id, salt='confirm-cita')

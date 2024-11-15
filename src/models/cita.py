@@ -10,9 +10,13 @@ class Cita(db.Model):
     tipo_cita = db.Column(db.String(100))
     detalles_adicionales = db.Column(db.Text)
 
+    @classmethod
+    def get_by_id(cls, _id):
+        return cls.query.filter_by(id=_id).first()
+
     def save(self):
         db.session.add(self)
         db.session.commit()
 
-    def delete(self):
+    def delete(self, _id):
         db.session.delete(self)

@@ -4,6 +4,8 @@ from .utils.my_date_format import MyDateFormat
 from ..models.cita import Cita
 from ..models.paciente import Paciente
 from ..models.disponibilidad import Disponibilidad
+from utils.emails_utils import send_email_confirmation
+from ..models.usuario import Usuario
 
 api = Namespace('cita', description='endpoints para visualizar cita médica')
 
@@ -80,7 +82,7 @@ class AgendarCita(Resource):
         except Exception as e:
             abort(500, f"Error al agendar la cita: {str(e)}")
 
-@api.route('/delete/<int:cita_id>')
+@api.route('/delete/')
 class DeleteCita(Resource):
     def delete(self):
         data = request.get_json()
@@ -104,3 +106,27 @@ class DeleteCita(Resource):
 
         except Exception as e:
             abort(500, f"Error al eliminar la cita: {str(e)}")
+
+
+@api.route('/confirmar_cita/')
+class ConfirmarCita(Resource):
+    def put(self):
+        id_cita = request.get_json().data["id_cita"]
+
+        cita = Cita.find_by_id(id_cita)
+
+        if not cita:
+            abort(404, 'No se encontró la cita')
+
+        paciente = Paciente.find_by_id(cita.paciente_id)
+        if not paciente:
+            abort(404, 'Paciente no encontrado')
+        #se asume que el usario existe ya que existe el paciente
+
+        usuario_asociado = Usuario.find_by_id(paciente.usuario_id)
+
+        cita.estado = "confirmada"
+
+        send_email_confirmation(usuario_asociado.correo, usuario_asociado.primer_nombre, cita.id)
+
+        return "Cita confirmada", 201
