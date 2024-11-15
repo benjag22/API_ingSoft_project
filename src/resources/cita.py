@@ -125,8 +125,7 @@ class ConfirmarCita(Resource):
 
         usuario_asociado = Usuario.find_by_id(paciente.usuario_id)
 
-        cita.estado = "confirmada"
-
-        send_email_confirmation(usuario_asociado.correo, usuario_asociado.primer_nombre, cita.id)
+        # Lo ideal es que asi sea pues la confimarcion la debe dar el paciente.
+        cita.estado = send_email_confirmation(usuario_asociado.correo, usuario_asociado.primer_nombre, cita.id)
 
         return "Cita confirmada", 201
