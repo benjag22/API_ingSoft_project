@@ -1,5 +1,4 @@
 from flask_mailman import EmailMessage
-
 from flask import url_for
 from itsdangerous import URLSafeTimedSerializer
 

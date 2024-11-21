@@ -4,7 +4,7 @@ from .utils.my_date_format import MyDateFormat
 from ..models.cita import Cita
 from ..models.paciente import Paciente
 from ..models.disponibilidad import Disponibilidad
-from utils.emails_utils import send_email_confirmation
+from ..resources.utils.emails_utils import send_email_confirmation
 from ..models.usuario import Usuario
 
 api = Namespace('cita', description='endpoints para visualizar cita médica')
