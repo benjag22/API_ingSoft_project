@@ -157,4 +157,14 @@ class ObtenerDisponibilidad(Resource):
                 })
 
         return result,200
-
+disponibilidades_delete_input = api.model(
+    'Disponibilidad',
+    {
+        'especialista_id': fields.Integer(required=True, description="ID del especialista"),
+    }
+)
+@api.route('/eliminar-disponibilidades/<int:especialista_id>')
+class EliminarDisponibilidad(Resource):
+    @api.expect(disponibilidades_delete_input)
+    def delete(self, especialista_id)->None:
+        return

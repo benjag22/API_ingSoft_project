@@ -6,7 +6,7 @@ from ..models.usuario import Usuario
 from ..models.especialidad import Especialidad
 from ..models.especialista import Especialista
 
-api = Namespace('especialista', description='endpoints para especialistas')
+api = Namespace('especialistas', description='endpoints para especialistas')
 
 user_input = api.model(
     'UserRegisterFields',
@@ -56,12 +56,10 @@ class RegisterEspecialista(Resource):
         data = request.get_json()
         usuario_data = data['usuario']
 
-        # Verificar si el usuario ya existe por correo
         usuario = Usuario.find_by_email(usuario_data['correo'])
         tipo_usuario = usuario_data['tipo']
 
         if not usuario and tipo_usuario == 'especialista':
-            # Crear un nuevo usuario si no existe
             usuario = Usuario(
                 primer_nombre=usuario_data['primer_nombre'],
                 primer_apellido=usuario_data['primer_apellido'],
@@ -125,3 +123,45 @@ class RegisterEspecialista(Resource):
                 'usuario_id': especialista.usuario_id,
                 'especialidad_id': especialista.especialidad_id
             }
+
+    especialista_por_especialidad_output = api.inherit(
+        'EspecialistasField',
+        {
+            'nombre_especialidad': fields.Integer(required=True),
+            'especialidad_id': fields.Integer(required=True),
+        }
+    )
+
+    @api.route('/<string:especialidad>')
+    @api.doc(
+        responses={
+            200: 'Especialista encontrado',
+            404: 'Especialista no encontrado',
+            500: 'Error en el servidor'
+        }
+    )
+    class EspecialistasDeEspecialidad(Resource):
+        @api.marshal_with(especialista_output)
+        def get(self, especialidad):
+            try:
+                if especialidad.isdigit():
+                    #caso de que se busque por id de la especialidad
+                    especialidad_id = int(especialidad)
+                else:
+                    #Caso de que se busque por nombre
+                    especialidad_obj = Especialidad.find_by_name(especialidad)
+                    if not especialidad_obj:
+                        abort(404, 'Especialidad no encontrada')
+                    especialidad_id = especialidad_obj.id
+
+                especialistas = Especialista.find_all_by_spiacialty(especialidad_id)
+
+
+                if not especialistas:
+                    abort(404, 'Especialistas no encontrado')
+
+                return especialistas, 200
+            except Exception as e:
+                abort(500,"error")
+
+

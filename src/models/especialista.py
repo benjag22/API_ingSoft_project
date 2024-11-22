@@ -14,6 +14,9 @@ class Especialista(db.Model):
     @classmethod
     def find_by_usuario_id(cls, usuario_id):
         return cls.query.filter_by(usuario_id=usuario_id).first()
+    @classmethod
+    def find_all_by_spiacialty(cls,_id_especialidad):
+        return cls.query.filter_by(especialidad_id=_id_especialidad).all()
 
     def save(self):
         db.session.add(self)

@@ -14,6 +14,8 @@ class Especialidad(db.Model):
     def find_by_id(cls, _id):
         return cls.query.filter_by(id = _id).first()
 
+
+
     def save(self):
         db.session.add(self)
         db.session.commit()
