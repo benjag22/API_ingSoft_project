@@ -129,3 +129,25 @@ class ConfirmarCita(Resource):
         cita.estado = send_email_confirmation(usuario_asociado.correo, usuario_asociado.primer_nombre, cita.id)
 
         return "Cita confirmada", 201
+
+    @api.route('/especialidad/')
+    class MultiplesCitasPorEspecialidad(Resource):
+        def put(self):
+            id_cita = request.get_json().data["id_cita"]
+
+            cita = Cita.find_by_id(id_cita)
+
+            if not cita:
+                abort(404, 'No se encontró la cita')
+
+            paciente = Paciente.find_by_id(cita.paciente_id)
+            if not paciente:
+                abort(404, 'Paciente no encontrado')
+            # se asume que el usario existe ya que existe el paciente
+
+            usuario_asociado = Usuario.find_by_id(paciente.usuario_id)
+
+            # Lo ideal es que asi sea pues la confimarcion la debe dar el paciente.
+            cita.estado = send_email_confirmation(usuario_asociado.correo, usuario_asociado.primer_nombre, cita.id)
+
+            return "Cita confirmada", 201

@@ -101,3 +101,27 @@ class RegisterAdministrativo(Resource):
             'usuario_id': nuevo_administrativo.usuario_id,
             'especialidad_id': nuevo_administrativo.especialidad_id
         }, 201
+
+    @api.route('/por_correo/<string:correo>')
+    @api.doc(
+        responses={
+            200: 'Administrativo encontrado',
+            404: 'Administrativo no encontrado',
+            500: 'Error en el servidor'
+        }
+    )
+    class AdministrativoPorCorreo(Resource):
+        def get(self, correo):
+            usuario_de_administrativo = Usuario.find_by_email(correo)
+            if not usuario_de_administrativo:
+                abort(404, "no se encontro el usuario asciado")
+
+            administrativo = Administrativo.find_by_usuario_id(usuario_de_administrativo.id)
+            if not administrativo:
+                abort(404, 'Especialista no encontrado')
+
+            return {
+                'id': administrativo.id,
+                'usuario_id': administrativo.usuario_id,
+                'administrativo_id': administrativo.especialidad_id
+            }
