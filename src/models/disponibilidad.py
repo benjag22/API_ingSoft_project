@@ -1,5 +1,3 @@
-from email.policy import default
-
 from src.config.db_configs import db
 
 

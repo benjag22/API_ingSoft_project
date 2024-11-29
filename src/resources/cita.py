@@ -3,6 +3,7 @@ from flask_restx import Namespace, Resource, fields
 from .utils.my_date_format import MyDateFormat
 from ..models.cita import Cita
 from ..models.paciente import Paciente
+from ..models.especialista import Especialista
 from ..models.disponibilidad import Disponibilidad
 from ..resources.utils.emails_utils import send_email_confirmation
 from ..models.usuario import Usuario
@@ -132,22 +133,47 @@ class ConfirmarCita(Resource):
 
     @api.route('/especialidad/')
     class MultiplesCitasPorEspecialidad(Resource):
-        def put(self):
-            id_cita = request.get_json().data["id_cita"]
+        def get(self):
+            especialidad_id = request.args.get('especialidad_id')
 
-            cita = Cita.find_by_id(id_cita)
+            if not especialidad_id:
+                return {'message': 'especialidad_id es requerido.'}, 400
 
-            if not cita:
-                abort(404, 'No se encontró la cita')
+            try:
+                especialistas_asociados = Especialista.find_all_by_spiacialty(especialidad_id)
 
-            paciente = Paciente.find_by_id(cita.paciente_id)
-            if not paciente:
-                abort(404, 'Paciente no encontrado')
-            # se asume que el usario existe ya que existe el paciente
+                if not especialistas_asociados:
+                    return {'message': 'No se encontraron especialistas para esta especialidad.'}, 404
 
-            usuario_asociado = Usuario.find_by_id(paciente.usuario_id)
+                especialistas_ids = [especialista.id for especialista in especialistas_asociados]
 
-            # Lo ideal es que asi sea pues la confimarcion la debe dar el paciente.
-            cita.estado = send_email_confirmation(usuario_asociado.correo, usuario_asociado.primer_nombre, cita.id)
+                disponibilidades = Disponibilidad.query.filter(
+                    Disponibilidad.especialista_id.in_(especialistas_ids)
+                ).all()
 
-            return "Cita confirmada", 201
+                if not disponibilidades:
+                    return {'message': 'No se encontraron citas asociadas a esta especialidad.'}, 404
+
+                disponibilidades_ids = [disponibilidad.id for disponibilidad in disponibilidades]
+
+                citas = Cita.query.filter(Cita.disponibilidad_id.in_(disponibilidades_ids)).all()
+
+                citas_data = [
+                    {
+                        'cita_id': cita.id,
+                        'paciente_id': cita.paciente_id,
+                        'disponibilidad_id': cita.disponibilidad_id,
+                        'estado': cita.estado,
+                        'tipo_cita': cita.tipo_cita,
+                        'detalles_adicionales': cita.detalles_adicionales
+                    } for cita in citas
+                ]
+
+                return {
+                    'especialidad_id': especialidad_id,
+                    'citas': citas_data
+                }, 200
+
+            except Exception as e:
+                return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
+
