@@ -134,13 +134,14 @@ class ConfirmarCita(Resource):
     @api.route('/especialidad/')
     class MultiplesCitasPorEspecialidad(Resource):
         def get(self):
-            especialidad_id = request.args.get('especialidad_id')
+            especialidad_id = request.get_json()['especialidad_id']
+
 
             if not especialidad_id:
                 return {'message': 'especialidad_id es requerido.'}, 400
 
             try:
-                especialistas_asociados = Especialista.find_all_by_spiacialty(especialidad_id)
+                especialistas_asociados = Especialista.find_all_by_spiacialty(int(especialidad_id))
 
                 if not especialistas_asociados:
                     return {'message': 'No se encontraron especialistas para esta especialidad.'}, 404
