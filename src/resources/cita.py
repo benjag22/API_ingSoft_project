@@ -1,5 +1,6 @@
 from flask import request, abort
 from flask_restx import Namespace, Resource, fields
+from sqlalchemy.exc import SQLAlchemyError
 from .utils.my_date_format import MyDateFormat
 from ..models.cita import Cita
 from ..models.paciente import Paciente
@@ -131,15 +132,9 @@ class ConfirmarCita(Resource):
 
         return "Cita confirmada", 201
 
-    @api.route('/especialidad/')
+    @api.route('/especialidad/<int:especialidad_id>')
     class MultiplesCitasPorEspecialidad(Resource):
-        def get(self):
-            especialidad_id = request.get_json()['especialidad_id']
-
-
-            if not especialidad_id:
-                return {'message': 'especialidad_id es requerido.'}, 400
-
+        def get(self, especialidad_id):
             try:
                 especialistas_asociados = Especialista.find_all_by_spiacialty(int(especialidad_id))
 
@@ -170,11 +165,11 @@ class ConfirmarCita(Resource):
                     } for cita in citas
                 ]
 
-                return {
-                    'especialidad_id': especialidad_id,
-                    'citas': citas_data
-                }, 200
+                return {'citas': citas_data}, 200
 
+            except SQLAlchemyError as e:
+                return {'message': f'Error de base de datos: {str(e)}'}, 500
             except Exception as e:
                 return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
+
 

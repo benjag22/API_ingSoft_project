@@ -127,5 +127,5 @@ class RegisterAdministrativo(Resource):
             return {
                 'id': administrativo.id,
                 'usuario_id': administrativo.usuario_id,
-                'administrativo_id': administrativo.especialidad_id
+                'especialidad_id': administrativo.especialidad_id
             }
