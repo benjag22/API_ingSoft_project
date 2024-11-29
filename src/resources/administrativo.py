@@ -6,40 +6,42 @@ from ..models.usuario import Usuario
 from ..models.especialidad import Especialidad
 from ..models.administrativo import Administrativo
 
-api = Namespace('especialista', description='endpoints para especialistas')
+api = Namespace('administrativo', description='endpoints para usuario tipo administrativo')
 
 user_input = api.model(
     'UserRegisterFields',
     {
-        'primer_nombre': fields.String(required=True),
-        'primer_apellido': fields.String(required=True),
-        'correo': fields.String(required=True),
-        'contrasenia': fields.String(required=True),
+        'primer_nombre': fields.String(required=True, example='Laura'),
+        'primer_apellido': fields.String(required=True, example='Gomez'),
+        'correo': fields.String(required=True, example='laura.gomez@administracion.com'),
+        'contrasenia': fields.String(required=True, example='password123'),
         'tipo': fields.String(
             required=True,
             description="Tipo de usuario: administrativo, especialista, o paciente",
-            enum=['administrativo', 'especialista', 'paciente']
+            enum=['administrativo', 'especialista', 'paciente'],
+            example='administrativo'
         ),
-        'nombre_usuario': fields.String(required=True)
+        'nombre_usuario': fields.String(required=True, example='laura_admin')
     }
 )
+
 administrativo_input = api.model(
-    'EspecialistaRegisterFields',
+    'AdministrativoRegisterFields',
     {
-        'especialidad': fields.String(required=True),
+        'especialidad': fields.String(required=True, example='medicina'),
         'usuario': fields.Nested(user_input, required=True)
     }
 )
+
 administrativo_output = api.inherit(
-    'EspecialistaSalida',
+    'AdministrativoSalida',
+    api.model('Base', {}),  # Esto asegura que `inherit` funcione correctamente.
     {
         'id': fields.Integer(required=True),
         'usuario_id': fields.Integer(required=True),
         'especialidad_id': fields.Integer(required=True),
     }
 )
-
-
 @api.route('/registrar')
 @api.doc(
     responses={
@@ -58,10 +60,12 @@ class RegisterAdministrativo(Resource):
 
         # Verificar si el usuario ya existe por correo
         usuario = Usuario.find_by_email(usuario_data['correo'])
+
         tipo_usuario = usuario_data['tipo']
 
-        if not usuario and tipo_usuario == 'administrativo':
-            # Crear un nuevo usuario si no existe
+        if usuario and tipo_usuario != 'administrativo':
+            abort(409, 'El usuario ya existe pero no es del tipo administrativo.')
+        elif not usuario:
             usuario = Usuario(
                 primer_nombre=usuario_data['primer_nombre'],
                 primer_apellido=usuario_data['primer_apellido'],

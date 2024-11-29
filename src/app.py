@@ -9,6 +9,7 @@ from src.resources.paciente import api as paciente_namespace
 from src.resources.especialista import api as especialista_namespace
 from src.resources.especialidad import api as especialidad_namespace
 from src.resources.disponibilidad import api as disponibilidad_namespace
+from src.resources.administrativo import api as administrativo_namespace
 from src.resources.cita import api as cita_namespace
 # Inicializar la API
 app = Flask(__name__)
@@ -26,6 +27,7 @@ api.add_namespace(paciente_namespace)
 api.add_namespace(especialista_namespace)
 api.add_namespace(especialidad_namespace)
 api.add_namespace(disponibilidad_namespace)
+api.add_namespace(administrativo_namespace)
 api.add_namespace(cita_namespace)
 
 

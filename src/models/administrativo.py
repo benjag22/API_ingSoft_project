@@ -10,3 +10,8 @@ class Administrativo(db.Model):
     @classmethod
     def find_by_usuario_id(cls, usuario_id):
         return cls.query.filter_by(usuario_id=usuario_id).first()
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
