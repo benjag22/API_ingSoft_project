@@ -6,7 +6,7 @@ from ..models.cita import Cita
 from ..models.paciente import Paciente
 from ..models.especialista import Especialista
 from ..models.disponibilidad import Disponibilidad
-from ..resources.utils.emails_utils import send_email_confirmation
+from .utils.emails_utils import send_email_confirmation
 from ..models.usuario import Usuario
 
 api = Namespace('cita', description='endpoints para visualizar cita médica')
@@ -110,27 +110,37 @@ class DeleteCita(Resource):
             abort(500, f"Error al eliminar la cita: {str(e)}")
 
 
-@api.route('/confirmar_cita/')
-class ConfirmarCita(Resource):
-    def put(self):
-        id_cita = request.get_json().data["id_cita"]
+@api.route('/confirmar_cita')
+class ConfirmarCitaCorreo(Resource):
+    def post(self):
+        data = request.get_json()
+        cita_id = data['id_cita']
 
-        cita = Cita.find_by_id(id_cita)
+        if not cita_id:
+            return {"message": "Falta el id_cita en el cuerpo de la solicitud", "success": False}, 400
 
+        cita = Cita.get_by_id(cita_id)
         if not cita:
-            abort(404, 'No se encontró la cita')
+            return {"message": "No se encontró la cita", "success": False}, 404
+
+        if cita.estado == "confirmada":
+            return {"message": "La cita ya está confirmada", "success": True}, 200
 
         paciente = Paciente.find_by_id(cita.paciente_id)
         if not paciente:
-            abort(404, 'Paciente no encontrado')
-        #se asume que el usario existe ya que existe el paciente
+            return {"message": "No se encontró el paciente asociado a la cita", "success": False}, 404
 
-        usuario_asociado = Usuario.find_by_id(paciente.usuario_id)
+        usuario_info = Usuario.find_by_id(paciente.usuario_id)
 
-        # Lo ideal es que asi sea pues la confimarcion la debe dar el paciente.
-        cita.estado = send_email_confirmation(usuario_asociado.correo, usuario_asociado.primer_nombre, cita.id)
+        if not usuario_info:
+            return {"message":"No se encontró el paciente asociado a la cita", "success": False}, 404
 
-        return "Cita confirmada", 201
+        try:
+            send_email_confirmation(usuario_info.correo, usuario_info.primer_nombre, cita_id)
+            return {"message": "Correo de confirmación enviado exitosamente", "success": True}, 200
+        except Exception as e:
+            return {"message": f"Error al enviar el correo: {str(e)}", "success": False}, 500
+
 
     @api.route('/especialidad/<int:especialidad_id>')
     class MultiplesCitasPorEspecialidad(Resource):
@@ -171,5 +181,6 @@ class ConfirmarCita(Resource):
                 return {'message': f'Error de base de datos: {str(e)}'}, 500
             except Exception as e:
                 return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
+
 
 
