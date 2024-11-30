@@ -2,7 +2,9 @@ from flask import request, abort
 from flask_restx import Namespace, Resource, fields
 from sqlalchemy.exc import SQLAlchemyError
 from .utils.my_date_format import MyDateFormat
+from ..models.bloque_de_disponibilidad import BloqueDeDisponibilidad
 from ..models.cita import Cita
+from ..models.especialidad import Especialidad
 from ..models.paciente import Paciente
 from ..models.especialista import Especialista
 from ..models.disponibilidad import Disponibilidad
@@ -110,7 +112,7 @@ class DeleteCita(Resource):
             abort(500, f"Error al eliminar la cita: {str(e)}")
 
 
-@api.route('/confirmar_cita')
+@api.route('/enlace')
 class ConfirmarCitaCorreo(Resource):
     def post(self):
         data = request.get_json()
@@ -141,6 +143,66 @@ class ConfirmarCitaCorreo(Resource):
         except Exception as e:
             return {"message": f"Error al enviar el correo: {str(e)}", "success": False}, 500
 
+    @api.route('/confirmar_cita/<int:id_cita>')
+    class ConfirmarCita(Resource):
+        def get(self, id_cita):
+            if not id_cita:
+                abort(400, "Falta el id_cita en el cuerpo de la solicitud")
+
+            cita = Cita.get_by_id(id_cita)
+            if not cita:
+                return {"message": "No se encontró la cita", "success": False}, 404
+
+            if cita.estado == "confirmada":
+                return {"message": "La cita ya está confirmada", "success": True}, 200
+
+            cita.estado = "confirmada"
+            cita.save()
+
+            return {"message": "Cita confirmada exitosamente", "success": True}, 200
+
+    @api.route('/<int:id_cita>')
+    class Cita(Resource):
+        def get(self, id_cita):
+            if not id_cita:
+                return {"message": "Falta el id_cita en el cuerpo de la solicitud", "success": False}, 400
+
+            cita = Cita.get_by_id(id_cita)
+            if not cita:
+                return {"message": "No se encontró la cita", "success": False}, 404
+
+
+            paciente_asociado = Paciente.find_by_id(cita.paciente_id)
+            if not paciente_asociado:
+                return {"message": "Paciente asociado no encontrado", "success": False}, 404
+            usuario_asociado_paciente = Usuario.find_by_id(paciente_asociado.usuario_id)
+
+            disponibilidad_asociada = Disponibilidad.find_by_id(cita.disponibilidad_id)
+            if not disponibilidad_asociada:
+                return {"message": "Disponibilidad asociada no encontrada", "success": False}, 404
+            bloque_asociado = BloqueDeDisponibilidad.find_by_id(disponibilidad_asociada.bloque_id)
+
+            especialista_asociado = Especialista.find_by_id(disponibilidad_asociada.especialista_id)
+            if not especialista_asociado:
+                return {"message": "Especialista asociado no encontrado", "success": False}, 404
+            usuario_asociado_especialista = Usuario.find_by_id(especialista_asociado.usuario_id)
+            especialidad = Especialidad.find_by_id(especialista_asociado.especialidad_id)
+
+            info_cita = {
+                "id_cita": id_cita,
+                "paciente": f"{usuario_asociado_paciente.primer_nombre} {usuario_asociado_paciente.primer_apellido}",
+                "rut_paciente": paciente_asociado.rut,
+                "especialista": f"{usuario_asociado_especialista.primer_nombre} {usuario_asociado_especialista.primer_apellido}",
+                "especialidad": especialidad.nombre,
+                "tipo_cita": cita.tipo_cita,
+                "detalle_cita": cita.detalles_adicionales,
+                "estado_cita": cita.estado,
+                "fecha": bloque_asociado.fecha.isoformat() if bloque_asociado.fecha else None,
+                "hora_inicio": bloque_asociado.hora_inicio.isoformat() if bloque_asociado.hora_inicio else None,
+                "hora_fin": bloque_asociado.hora_fin.isoformat() if bloque_asociado.hora_fin else None,
+            }
+
+            return info_cita, 200
 
     @api.route('/especialidad/<int:especialidad_id>')
     class MultiplesCitasPorEspecialidad(Resource):

@@ -1,7 +1,7 @@
 from flask_mailman import EmailMessage
 
 def send_email_confirmation(email, nombrepaciente, cita_id):
-    frontend_url = f"http://frontend.com/confirmar-cita/{cita_id}" 
+    frontend_url = f"http://localhost:5173/confirmar-cita/{cita_id}"
 
     asunto = 'Confirmación de cita médica'
     cuerpo = f"""
