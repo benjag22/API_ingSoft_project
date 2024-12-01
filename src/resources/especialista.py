@@ -145,23 +145,36 @@ class RegisterEspecialista(Resource):
         def get(self, especialidad):
             try:
                 if especialidad.isdigit():
-                    #caso de que se busque por id de la especialidad
                     especialidad_id = int(especialidad)
                 else:
-                    #Caso de que se busque por nombre
                     especialidad_obj = Especialidad.find_by_name(especialidad)
                     if not especialidad_obj:
-                        abort(404, 'Especialidad no encontrada')
+                        abort(404, message="Especialidad no encontrada")
                     especialidad_id = especialidad_obj.id
 
                 especialistas = Especialista.find_all_by_spiacialty(especialidad_id)
-
-
                 if not especialistas:
-                    abort(404, 'Especialistas no encontrado')
+                    abort(404, message="No se encontraron especialistas para esta especialidad")
 
-                return especialistas, 200
+                result = []
+                for especialista in especialistas:
+                    usuario = Usuario.find_by_id(especialista.usuario_id)
+                    if not usuario:
+                        continue
+                    nombre = f"{usuario.primer_nombre} {usuario.primer_apellido}"
+                    result.append({
+                        'id': especialista.id,
+                        'usuario_id': especialista.usuario_id,
+                        'nombre': nombre,
+                        'correo': usuario.correo
+                    })
+
+                return result, 200
+
+            except ValueError:
+                abort(400, message="El identificador de especialidad debe ser un número o un nombre válido")
             except Exception as e:
-                abort(500,"error")
+                abort(500, message=f"Error interno del servidor: {str(e)}")
+
 
 
