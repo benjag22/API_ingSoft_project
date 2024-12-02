@@ -163,8 +163,19 @@ disponibilidades_delete_input = api.model(
         'especialista_id': fields.Integer(required=True, description="ID del especialista"),
     }
 )
-@api.route('/eliminar-disponibilidades/<int:especialista_id>')
+
+@api.route('/eliminar/<int:id>')
 class EliminarDisponibilidad(Resource):
     @api.expect(disponibilidades_delete_input)
-    def delete(self, especialista_id)->None:
-        return
+    def delete(self, id):
+        try:
+            disponibilidad = Disponibilidad.find_by_id(id)
+            if not disponibilidad:
+                return {"message": f"No se encontró la disponibilidad con ID {id}"}, 404
+
+            disponibilidad.delete()
+
+            return {"message": f"Disponibilidad con ID {id} eliminada exitosamente."}, 200
+
+        except Exception as e:
+            return {"message": f"Error al eliminar la disponibilidad: {str(e)}"}, 500

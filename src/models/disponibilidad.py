@@ -9,6 +9,13 @@ class Disponibilidad(db.Model):
     bloque_id = db.Column(db.Integer, db.ForeignKey('bloque_de_disponibilidad.id', ondelete='CASCADE'), nullable=False)
     ocupada = db.Column(db.Boolean, default=False, nullable=False)
 
+    def delete(self):
+        try:
+            db.session.delete(self)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise e
 
     def save(self):
         db.session.add(self)
@@ -25,4 +32,3 @@ class Disponibilidad(db.Model):
     @classmethod
     def get_all(cls):
         return Disponibilidad.query.all()
-

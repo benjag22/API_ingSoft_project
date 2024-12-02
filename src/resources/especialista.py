@@ -124,7 +124,7 @@ class RegisterEspecialista(Resource):
                 'especialidad_id': especialista.especialidad_id
             }
 
-    especialista_por_especialidad_output = api.inherit(
+    especialistas_por_especialidad_output = api.inherit(
         'EspecialistasField',
         {
             'nombre_especialidad': fields.Integer(required=True),
@@ -132,7 +132,7 @@ class RegisterEspecialista(Resource):
         }
     )
 
-    @api.route('/<string:especialidad>')
+    @api.route('/por/<string:especialidad>')
     @api.doc(
         responses={
             200: 'Especialista encontrado',
@@ -141,7 +141,6 @@ class RegisterEspecialista(Resource):
         }
     )
     class EspecialistasDeEspecialidad(Resource):
-        @api.marshal_with(especialista_output)
         def get(self, especialidad):
             try:
                 if especialidad.isdigit():
