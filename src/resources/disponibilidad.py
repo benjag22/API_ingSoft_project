@@ -106,15 +106,15 @@ class BuscarDisponibilidades(Resource):
 
         result=[]
         for disponibilidad in disponibilidades:
-            bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
-            result.append({
-                'id': disponibilidad.id,
-                'especialista_id': disponibilidad.especialista_id,
-                'fecha': bloque.fecha.strftime('%Y-%m-%d'),
-                'hora_inicio': bloque.hora_inicio.strftime('%H:%M:%S') if bloque.hora_inicio else None,
-                'hora_fin': bloque.hora_fin.strftime('%H:%M:%S') if bloque.hora_fin else None 
-            })
-
+            if not disponibilidad.ocupada:
+                bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
+                result.append({
+                    'id': disponibilidad.id,
+                    'especialista_id': disponibilidad.especialista_id,
+                    'fecha': bloque.fecha.strftime('%Y-%m-%d'),
+                    'hora_inicio': bloque.hora_inicio.strftime('%H:%M:%S') if bloque.hora_inicio else None,
+                    'hora_fin': bloque.hora_fin.strftime('%H:%M:%S') if bloque.hora_fin else None
+                })
         return {'disponibilidades': result},200
 
 disponibilidad_output_for_pacient= api.model('Disponibilidad para pacientes',

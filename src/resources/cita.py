@@ -208,13 +208,16 @@ class ConfirmarCitaCorreo(Resource):
     class MultiplesCitasPorEspecialidad(Resource):
         def get(self, especialidad_id):
             try:
+                # Obtener los especialistas de la especialidad solicitada
                 especialistas_asociados = Especialista.find_all_by_spiacialty(int(especialidad_id))
 
                 if not especialistas_asociados:
                     return {'message': 'No se encontraron especialistas para esta especialidad.'}, 404
 
+                # Extraer los IDs de los especialistas encontrados
                 especialistas_ids = [especialista.id for especialista in especialistas_asociados]
 
+                # Obtener todas las disponibilidades asociadas a los especialistas
                 disponibilidades = Disponibilidad.query.filter(
                     Disponibilidad.especialista_id.in_(especialistas_ids)
                 ).all()
@@ -222,27 +225,59 @@ class ConfirmarCitaCorreo(Resource):
                 if not disponibilidades:
                     return {'message': 'No se encontraron citas asociadas a esta especialidad.'}, 404
 
+                # Extraer los IDs de las disponibilidades obtenidas
                 disponibilidades_ids = [disponibilidad.id for disponibilidad in disponibilidades]
 
+                # Obtener todas las citas asociadas a las disponibilidades encontradas
                 citas = Cita.query.filter(Cita.disponibilidad_id.in_(disponibilidades_ids)).all()
 
-                citas_data = [
-                    {
-                        'cita_id': cita.id,
-                        'paciente_id': cita.paciente_id,
-                        'disponibilidad_id': cita.disponibilidad_id,
-                        'estado': cita.estado,
-                        'tipo_cita': cita.tipo_cita,
-                        'detalles_adicionales': cita.detalles_adicionales
-                    } for cita in citas
-                ]
+                # Recopilar la información detallada de cada cita
+                citas_data = []
 
-                return {'citas': citas_data}, 200
+                for cita in citas:
+                    paciente_asociado = Paciente.find_by_id(cita.paciente_id)
+                    if not paciente_asociado:
+                        continue  # Si no se encuentra el paciente, se salta esta cita
+
+                    usuario_asociado_paciente = Usuario.find_by_id(paciente_asociado.usuario_id)
+
+                    disponibilidad_asociada = Disponibilidad.find_by_id(cita.disponibilidad_id)
+                    if not disponibilidad_asociada:
+                        continue  # Si no se encuentra la disponibilidad, se salta esta cita
+
+                    bloque_asociado = BloqueDeDisponibilidad.find_by_id(disponibilidad_asociada.bloque_id)
+
+                    especialista_asociado = Especialista.find_by_id(disponibilidad_asociada.especialista_id)
+                    if not especialista_asociado:
+                        continue  # Si no se encuentra el especialista, se salta esta cita
+
+                    usuario_asociado_especialista = Usuario.find_by_id(especialista_asociado.usuario_id)
+                    especialidad = Especialidad.find_by_id(especialista_asociado.especialidad_id)
+
+                    # Construir la información detallada de la cita
+                    info_cita = {
+                        "id_cita": cita.id,
+                        "paciente": f"{usuario_asociado_paciente.primer_nombre} {usuario_asociado_paciente.primer_apellido}",
+                        "rut_paciente": paciente_asociado.rut,
+                        "especialista": f"{usuario_asociado_especialista.primer_nombre} {usuario_asociado_especialista.primer_apellido}",
+                        "especialidad": especialidad.nombre,
+                        "tipo_cita": cita.tipo_cita,
+                        "detalle_cita": cita.detalles_adicionales,
+                        "estado_cita": cita.estado,
+                        "fecha": bloque_asociado.fecha.isoformat() if bloque_asociado.fecha else None,
+                        "hora_inicio": bloque_asociado.hora_inicio.isoformat() if bloque_asociado.hora_inicio else None,
+                        "hora_fin": bloque_asociado.hora_fin.isoformat() if bloque_asociado.hora_fin else None,
+                    }
+
+                    citas_data.append(info_cita)
+
+                return {"citas": citas_data}, 200
 
             except SQLAlchemyError as e:
                 return {'message': f'Error de base de datos: {str(e)}'}, 500
             except Exception as e:
                 return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
+
 
 
 
