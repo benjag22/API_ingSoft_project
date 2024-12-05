@@ -204,9 +204,10 @@ class ConfirmarCitaCorreo(Resource):
 
             return info_cita, 200
 
-    @api.route('/especialidad/<int:especialidad_id>')
+    @api.route('/<int:especialidad_id>', defaults={'specialist_name': None})
+    @api.route('/<string:specialist_name>/<int:especialidad_id>')
     class MultiplesCitasPorEspecialidad(Resource):
-        def get(self, especialidad_id):
+        def get(self, especialidad_id, specialist_name):
             try:
                 # Obtener los especialistas de la especialidad solicitada
                 especialistas_asociados = Especialista.find_all_by_spiacialty(int(especialidad_id))
@@ -214,10 +215,19 @@ class ConfirmarCitaCorreo(Resource):
                 if not especialistas_asociados:
                     return {'message': 'No se encontraron especialistas para esta especialidad.'}, 404
 
-                # Extraer los IDs de los especialistas encontrados
-                especialistas_ids = [especialista.id for especialista in especialistas_asociados]
+                especialistas_ids = []
+                for especialista in especialistas_asociados:
+                    usuario_asociado_especialista = Usuario.find_by_id(especialista.usuario_id)
+                    if not usuario_asociado_especialista:
+                        continue
 
-                # Obtener todas las disponibilidades asociadas a los especialistas
+                    if specialist_name:
+                        nombre_completo = f"{usuario_asociado_especialista.primer_nombre} {usuario_asociado_especialista.primer_apellido}".lower()
+                        if specialist_name.lower() not in nombre_completo:
+                            continue
+
+                    especialistas_ids.append(especialista.id)
+
                 disponibilidades = Disponibilidad.query.filter(
                     Disponibilidad.especialista_id.in_(especialistas_ids)
                 ).all()
@@ -277,6 +287,7 @@ class ConfirmarCitaCorreo(Resource):
                 return {'message': f'Error de base de datos: {str(e)}'}, 500
             except Exception as e:
                 return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
+
 
 
 
