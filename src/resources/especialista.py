@@ -2,6 +2,8 @@ from flask import request, abort
 from flask_restx import Namespace, Resource, fields
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy.exc import SQLAlchemyError
+
+from models.cita import Cita
 from ..models.usuario import Usuario
 from ..models.especialidad import Especialidad
 from ..models.especialista import Especialista
@@ -174,6 +176,47 @@ class RegisterEspecialista(Resource):
                 abort(400, message="El identificador de especialidad debe ser un número o un nombre válido")
             except Exception as e:
                 abort(500, message=f"Error interno del servidor: {str(e)}")
+    # Mostrar citas por el nombre del especialista
+    class CitasPorNombreEspecialista(Resource):
+        def get(self, nombre_especialista):
+            try:
+                # Buscar especialistas por el nombre que se obtiene
+                especialistas = Especialista.find_by_name(nombre_especialista)
+                if not especialistas:
+                    abort(404, message="No se encontraron especialistas con este nombre")
 
+                result = []
+                for especialista in especialistas:
+                    citas = Cita.find_all_by_specialist(especialista.id)
+                    if not citas:
+                        continue
+                    usuario = Usuario.find_by_id(especialista.usuario_id)
+                    if not usuario:
+                        continue
+                    # Imprimir detalle de las citas encontradas
+                    citas_detalle = []
+                    for cita in citas:
+                        paciente = Usuario.find_by_id(cita.paciente_id)
+                        if not paciente:
+                            continue
+                        citas_detalle.append({
+                            'id': cita.id,
+                            'fecha_hora': cita.fecha_hora,
+                            'paciente': f"{paciente.primer_nombre} {paciente.primer_apellido}"
+                        })
 
+                    result.append({
+                        'especialista_id': especialista.id,
+                        'nombre_especialista': f"{usuario.primer_nombre} {usuario.primer_apellido}",
+                        'correo': usuario.correo,
+                        'citas': citas_detalle
+                    })
+                if not result:
+                    abort(404, message="El especialista no tiene citas registradas")
 
+                return result, 200
+
+            except ValueError:
+                abort(400, message="El identificador de especialidad debe ser un número o un nombre válido")
+            except Exception as e:
+                abort(500, message=f"Error interno del servidor: {str(e)}")
