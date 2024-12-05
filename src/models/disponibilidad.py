@@ -25,6 +25,7 @@ class Disponibilidad(db.Model):
     def get_all_by_especialista_id(self, _especialista_id):
         return Disponibilidad.query.filter_by(especialista_id=_especialista_id).all()
 
+
     @classmethod
     def find_by_id(self, _id):
         return Disponibilidad.query.filter_by(id=_id).first()

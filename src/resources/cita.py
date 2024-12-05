@@ -204,8 +204,7 @@ class ConfirmarCitaCorreo(Resource):
 
             return info_cita, 200
 
-    @api.route('/<int:especialidad_id>', defaults={'specialist_name': None})
-    @api.route('/<string:specialist_name>/<int:especialidad_id>')
+    @api.route('/<string:especialidad_id>/', defaults={'specialist_name': ""})
     class MultiplesCitasPorEspecialidad(Resource):
         def get(self, especialidad_id, specialist_name):
             try:
@@ -287,8 +286,5 @@ class ConfirmarCitaCorreo(Resource):
                 return {'message': f'Error de base de datos: {str(e)}'}, 500
             except Exception as e:
                 return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
-
-
-
 
 

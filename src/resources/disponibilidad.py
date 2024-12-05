@@ -130,134 +130,59 @@ disponibilidad_output_for_pacient= api.model('Disponibilidad para pacientes',
 )
 disponibilidades_output_for_pacient= api.model('Disponibilidades para pacientes',
                                                {'disponibilidades':[disponibilidad_output_for_pacient]})
+
 @api.route('/obtener-disponibilidades')
 class ObtenerDisponibilidad(Resource):
     def get(self):
-        disponibilidades = Disponibilidad.get_all()
-        if not disponibilidades:
-            abort(404, "no se encontraron disponibiladades")
 
-        result=[]
+        especialidad_id = request.args.get('especialidad_id', type=int)
+        name_specialist = request.args.get('name_specialist', type=str)
+
+        if especialidad_id:
+            especialistas = Especialista.find_all_by_spiacialty(especialidad_id)
+            ids_especialistas = [especialista.id for especialista in especialistas]
+            disponibilidades = []
+            for id in ids_especialistas:
+                disponibilidades.extend(Disponibilidad.get_all_by_especialista_id(id))
+        else:
+            disponibilidades = Disponibilidad.get_all()
+
+        if not disponibilidades:
+            abort(404, "No se encontraron disponibilidades")
+
+        result = []
         for disponibilidad in disponibilidades:
             if not disponibilidad.ocupada:
                 especialista = Especialista.find_by_id(disponibilidad.especialista_id)
                 especialista_info = Usuario.find_by_id(especialista.usuario_id)
                 especialidad = Especialidad.find_by_id(especialista.especialidad_id)
                 bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
+
+                # Filtrar por nombre del especialista si se proporciona
+                if name_specialist:
+                    if name_specialist.lower() not in especialista_info.primer_nombre.lower() and name_specialist.lower() not in especialista_info.primer_apellido.lower():
+                        continue  
+
                 result.append({
                     'disponibilidad_id': disponibilidad.id,
                     'especialidad_id': especialidad.id,
                     'especialidad': especialidad.nombre,
                     'nombre_especialista': especialista_info.primer_nombre,
                     'apellido_especialista': especialista_info.primer_apellido,
-                    'correo':especialista_info.correo,
+                    'correo': especialista_info.correo,
                     'fecha': bloque.fecha.strftime('%Y-%m-%d'),
                     'hora_inicio': bloque.hora_inicio.strftime('%H:%M:%S') if bloque.hora_inicio else None,
                     'hora_fin': bloque.hora_fin.strftime('%H:%M:%S') if bloque.hora_fin else None
                 })
 
-        return result,200
+        return result, 200
+
 disponibilidades_delete_input = api.model(
     'Disponibilidad',
     {
         'especialista_id': fields.Integer(required=True, description="ID del especialista"),
     }
 )
-########
-@api.route('/<int:especialidad_id>', defaults={'specialist_name': None})
-@api.route('/<int:especialidad_id>')
-@api.route('/obtener-disponibilidades')
-class MultiplesDisponibilidadesPorEspecialidad(Resource):
-    def get(self, especialidad_id):
-        try:
-            # Obtener los especialistas de la especialidad solicitada
-            especialistas_asociados = Especialista.find_all_by_spiacialty(int(especialidad_id))
-
-            if not especialistas_asociados:
-                return {'message': 'No se encontraron especialistas para esta especialidad.'}, 404
-
-            # Obtener las disponibilidades de la especialidad solicitada
-            disponibilidad_asociada = Disponibilidad.find_all_by_spiacialty(int(especialidad_id))
-
-            result = []
-            for disponibilidad in disponibilidad_asociada:
-                if not disponibilidad.ocupada:
-                    especialista = Especialista.find_by_id(disponibilidad.especialista_id)
-                    especialista_info = Usuario.find_by_id(especialista.usuario_id)
-                    especialidad = Especialidad.find_by_id(especialista.especialidad_id)
-                    bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
-                    result.append({
-                        'disponibilidad_id': disponibilidad.id,
-                        'especialidad_id': especialidad.id,
-                        'especialidad': especialidad.nombre,
-                        'nombre_especialista': especialista_info.primer_nombre,
-                        'apellido_especialista': especialista_info.primer_apellido,
-                        'correo': especialista_info.correo,
-                        'fecha': bloque.fecha.strftime('%Y-%m-%d'),
-                        'hora_inicio': bloque.hora_inicio.strftime('%H:%M:%S') if bloque.hora_inicio else None,
-                        'hora_fin': bloque.hora_fin.strftime('%H:%M:%S') if bloque.hora_fin else None
-                    })
-                result.append(result.append)
-
-        except SQLAlchemyError as e:
-            return {'message': f'Error de base de datos: {str(e)}'}, 500
-        except Exception as e:
-            return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
-
-@api.route('/<int:especialidad_id>', defaults={'specialist_name': None})
-@api.route('/<string:specialist_name>/<int:especialidad_id>')
-@api.route('/obtener-disponibilidades')
-class MultiplesDisponibilidadesPorNombre(Resource):
-    def get(self, especialidad_id, specialist_name):
-        try:
-            # Obtener los especialistas de la especialidad solicitada
-            especialistas_asociados = Especialista.find_all_by_spiacialty(int(especialidad_id))
-
-            if not especialistas_asociados:
-                return {'message': 'No se encontraron especialistas para esta especialidad.'}, 404
-
-            especialistas_ids = []
-            for especialista in especialistas_asociados:
-                usuario_asociado_especialista = Usuario.find_by_id(especialista.usuario_id)
-                if not usuario_asociado_especialista:
-                    continue
-
-                if specialist_name:
-                    nombre_completo = f"{usuario_asociado_especialista.primer_nombre} {usuario_asociado_especialista.primer_apellido}".lower()
-                    if specialist_name.lower() not in nombre_completo:
-                        continue
-
-                especialistas_ids.append(especialista.id)
-
-            # Obtener las disponibilidades de la especialidad solicitada
-            disponibilidad_asociada = Disponibilidad.find_all_by_spiacialty(especialistas_ids)
-
-            result = []
-            for disponibilidad in disponibilidad_asociada:
-                if not disponibilidad.ocupada:
-                    especialista = Especialista.find_by_id(disponibilidad.especialista_id)
-                    especialista_info = Usuario.find_by_id(especialista.usuario_id)
-                    especialidad = Especialidad.find_by_id(especialista.especialidad_id)
-                    bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
-                    result.append({
-                        'disponibilidad_id': disponibilidad.id,
-                        'especialidad_id': especialidad.id,
-                        'especialidad': especialidad.nombre,
-                        'nombre_especialista': especialista_info.primer_nombre,
-                        'apellido_especialista': especialista_info.primer_apellido,
-                        'correo': especialista_info.correo,
-                        'fecha': bloque.fecha.strftime('%Y-%m-%d'),
-                        'hora_inicio': bloque.hora_inicio.strftime('%H:%M:%S') if bloque.hora_inicio else None,
-                        'hora_fin': bloque.hora_fin.strftime('%H:%M:%S') if bloque.hora_fin else None
-                    })
-                result.append(result.append)
-
-        except SQLAlchemyError as e:
-            return {'message': f'Error de base de datos: {str(e)}'}, 500
-        except Exception as e:
-            return {'message': f'Error al procesar la solicitud: {str(e)}'}, 500
-########
-
 @api.route('/eliminar/<int:id>')
 class EliminarDisponibilidad(Resource):
     @api.expect(disponibilidades_delete_input)
