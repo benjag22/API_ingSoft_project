@@ -158,10 +158,9 @@ class ObtenerDisponibilidad(Resource):
                 especialidad = Especialidad.find_by_id(especialista.especialidad_id)
                 bloque = BloqueDeDisponibilidad.find_by_id(disponibilidad.bloque_id)
 
-                # Filtrar por nombre del especialista si se proporciona
                 if name_specialist:
                     if name_specialist.lower() not in especialista_info.primer_nombre.lower() and name_specialist.lower() not in especialista_info.primer_apellido.lower():
-                        continue  
+                        continue
 
                 result.append({
                     'disponibilidad_id': disponibilidad.id,

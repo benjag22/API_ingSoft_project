@@ -204,9 +204,9 @@ class ConfirmarCitaCorreo(Resource):
 
             return info_cita, 200
 
-    @api.route('/<string:especialidad_id>/', defaults={'specialist_name': ""})
+    @api.route('/<string:especialidad_id>/')
     class MultiplesCitasPorEspecialidad(Resource):
-        def get(self, especialidad_id, specialist_name):
+        def get(self, especialidad_id):
             try:
                 # Obtener los especialistas de la especialidad solicitada
                 especialistas_asociados = Especialista.find_all_by_spiacialty(int(especialidad_id))
@@ -219,11 +219,6 @@ class ConfirmarCitaCorreo(Resource):
                     usuario_asociado_especialista = Usuario.find_by_id(especialista.usuario_id)
                     if not usuario_asociado_especialista:
                         continue
-
-                    if specialist_name:
-                        nombre_completo = f"{usuario_asociado_especialista.primer_nombre} {usuario_asociado_especialista.primer_apellido}".lower()
-                        if specialist_name.lower() not in nombre_completo:
-                            continue
 
                     especialistas_ids.append(especialista.id)
 

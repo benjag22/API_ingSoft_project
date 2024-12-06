@@ -33,3 +33,26 @@ class CreateEspecialidad(Resource):
         except SQLAlchemyError:
             abort(500, 'Error al guardar la especialidad en la base de datos.')
         return nueva_especialidad, 201
+
+
+@api.route('')
+class Especialidades(Resource):
+    def get(self):
+        try:
+            especialidades = Especialidad.find_all()
+            if not especialidades:
+                abort(404, "No se encontraron especialidades.")
+
+            result = []
+            for especialidad in especialidades:
+                result.append({
+                    "id": especialidad.id,
+                    "nombre": especialidad.nombre
+                })
+
+            return result, 200  
+
+        except SQLAlchemyError as e:
+            abort(500, f"Error en la base de datos: {str(e)}")
+        except Exception as e:
+            abort(500, f"Error inesperado: {str(e)}")
